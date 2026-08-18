@@ -10,7 +10,8 @@
   "home": "https://imsyy.top",
   "github": "https://github.com/SPlayer-Dev/SPlayer",
   "blog": "https://blog.imsyy.top",
-  "repository": "github:SPlayer-Dev/SPlayer",
+  "repository": "github:WWangZQ/SPlayer-fork",
+  "upstream": "https://github.com/SPlayer-Dev/SPlayer",
   "license": "AGPL-3.0",
   "license-file": "LICENSE",
   "engines": {

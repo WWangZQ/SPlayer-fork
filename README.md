@@ -26,6 +26,13 @@
 
 ![main](/screenshots/SPlayer.jpg)
 
+## 2moro Music 派生版本
+
+本仓库是 [SPlayer](https://github.com/SPlayer-Dev/SPlayer) 的派生版本，由
+[WWangZQ](https://github.com/WWangZQ) 维护，用于 `music.2moro.top`。部署版本对应的完整修改源码公开在
+[WWangZQ/SPlayer-fork](https://github.com/WWangZQ/SPlayer-fork)。原作者版权信息和
+[AGPL-3.0 许可证](./LICENSE) 保持不变。
+
 ## 说明
 
 ![提示](/screenshots/gitcodes.png)

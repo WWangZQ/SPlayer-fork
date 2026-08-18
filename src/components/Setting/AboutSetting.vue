@@ -13,6 +13,13 @@
           SPlayer-Next
         </n-button>
       </n-alert>
+      <n-alert type="info" style="margin-bottom: 12px">
+        <template #header>2moro Music 派生版本</template>
+        本站基于 SPlayer 修改并遵循 AGPL-3.0 开源。原项目版权信息保持不变，部署版本的完整修改源码见
+        <n-button text type="primary" @click="openLink('https://github.com/WWangZQ/SPlayer-fork')">
+          WWangZQ/SPlayer-fork
+        </n-button>
+      </n-alert>
       <n-card class="set-item">
         <n-flex align="center" class="about">
           <SvgIcon name="SPlayer" size="26" />
@@ -322,7 +329,12 @@ const specialContributors = [
 // 社区数据
 const communityData = [
   {
-    name: "GitHub",
+    name: "2moro Music 源码",
+    url: "https://github.com/WWangZQ/SPlayer-fork",
+    icon: "Github",
+  },
+  {
+    name: "SPlayer 上游",
     url: packageJson.github,
     icon: "Github",
   },

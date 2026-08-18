@@ -170,6 +170,12 @@ const menuOptions = computed<MenuOption[] | MenuGroupOption[]>(() => {
           icon: renderIcon("Cloud"),
         },
         {
+          key: "two-moro",
+          link: "two-moro",
+          label: "我的 OneDrive",
+          icon: renderIcon("Cloud"),
+        },
+        {
           key: "download",
           label: () =>
             h(
@@ -273,6 +279,12 @@ const menuOptions = computed<MenuOption[] | MenuGroupOption[]>(() => {
         },
       ]
     : [
+        {
+          key: "two-moro",
+          link: "two-moro",
+          label: "我的 OneDrive",
+          icon: renderIcon("Cloud"),
+        },
         {
           key: "local",
           link: "local",
