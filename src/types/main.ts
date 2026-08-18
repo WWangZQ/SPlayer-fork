@@ -112,8 +112,10 @@ export type SongType = {
   streamUrl?: string;
   /** 原始 ID（流媒体服务器的 ID） */
   originalId?: string;
+  /** 歌词 ID */
+  lyricId?: string;
   /** 流媒体服务器类型 */
-  serverType?: "navidrome" | "jellyfin" | "subsonic" | "opensubsonic" | "emby" | "2moro";
+  serverType?: "navidrome" | "jellyfin" | "subsonic" | "opensubsonic" | "emby" | "gdstudio";
   /** 流媒体服务器 ID */
   serverId?: string;
   /** 来源标记 */

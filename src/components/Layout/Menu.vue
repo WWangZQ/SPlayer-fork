@@ -80,7 +80,7 @@ const menuOptions = computed<MenuOption[] | MenuGroupOption[]>(() => {
         {
           key: "home",
           link: "home",
-          label: "为我推荐",
+          label: "2moro Music",
           icon: renderIcon("Home", {
             style: {
               transform: "translateY(-1px)",
@@ -91,7 +91,7 @@ const menuOptions = computed<MenuOption[] | MenuGroupOption[]>(() => {
           key: "discover",
           link: "discover",
           label: "发现音乐",
-          show: !settingStore.sidebarHide.hideDiscover,
+          show: false,
           icon: renderIcon("Discover", {
             style: {
               transform: "translateY(-1px)",
@@ -112,7 +112,7 @@ const menuOptions = computed<MenuOption[] | MenuGroupOption[]>(() => {
                 onClick: handleRefreshFM,
               }),
             ]),
-          show: isLogin() !== 0 && !settingStore.sidebarHide.hidePersonalFM,
+          show: false,
           icon: renderIcon("Radio", {
             style: {
               transform: "translateY(-1px)",
@@ -123,7 +123,7 @@ const menuOptions = computed<MenuOption[] | MenuGroupOption[]>(() => {
           key: "radio-hot",
           link: "radio-hot",
           label: "播客电台",
-          show: !settingStore.sidebarHide.hideRadioHot,
+          show: false,
           icon: renderIcon("Record", {
             style: {
               transform: "translateY(-1px)",
@@ -136,6 +136,7 @@ const menuOptions = computed<MenuOption[] | MenuGroupOption[]>(() => {
         },
         {
           key: "like-songs",
+          show: false,
           label: () =>
             h("div", { class: "user-liked" }, [
               h(NText, null, () => "我喜欢的音乐"),
@@ -159,20 +160,14 @@ const menuOptions = computed<MenuOption[] | MenuGroupOption[]>(() => {
           key: "like",
           link: "like",
           label: "我的收藏",
-          show: !settingStore.sidebarHide.hideLike,
+          show: false,
           icon: renderIcon("Star"),
         },
         {
           key: "cloud",
           link: "cloud",
           label: "我的云盘",
-          show: isLogin() === 1 && !settingStore.sidebarHide.hideCloud,
-          icon: renderIcon("Cloud"),
-        },
-        {
-          key: "two-moro",
-          link: "two-moro",
-          label: "我的 OneDrive",
+          show: false,
           icon: renderIcon("Cloud"),
         },
         {
@@ -217,7 +212,7 @@ const menuOptions = computed<MenuOption[] | MenuGroupOption[]>(() => {
         },
         {
           key: "user-playlists",
-          show: !settingStore.sidebarHide.hideUserPlaylists,
+          show: false,
           icon: statusStore.menuCollapsed ? renderIcon("PlaylistAdd") : undefined,
           label: () =>
             h("div", { class: "user-list" }, [
@@ -267,7 +262,7 @@ const menuOptions = computed<MenuOption[] | MenuGroupOption[]>(() => {
         // 收藏的歌单
         {
           key: "liked-playlists",
-          show: !settingStore.sidebarHide.hideLikedPlaylists,
+          show: false,
           icon: statusStore.menuCollapsed ? renderIcon("PlaylistAddCheck") : undefined,
           label: () =>
             h(
@@ -279,12 +274,6 @@ const menuOptions = computed<MenuOption[] | MenuGroupOption[]>(() => {
         },
       ]
     : [
-        {
-          key: "two-moro",
-          link: "two-moro",
-          label: "我的 OneDrive",
-          icon: renderIcon("Cloud"),
-        },
         {
           key: "local",
           link: "local",

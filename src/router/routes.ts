@@ -213,12 +213,6 @@ const appRoutes: Array<RouteRecordRaw> = [
     meta: { needLogin: true },
     component: () => import("@/views/Cloud.vue"),
   },
-  // 2moro OneDrive 歌单
-  {
-    path: "/two-moro",
-    name: "two-moro",
-    component: () => import("@/views/List/two-moro.vue"),
-  },
   // 每日推荐
   {
     path: "/daily-songs",

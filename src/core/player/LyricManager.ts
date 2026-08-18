@@ -1,4 +1,5 @@
 import { qqMusicMatch } from "@/api/qqmusic";
+import { getGdLyrics } from "@/api/gdstudio";
 import { songLyric, songLyricTTML } from "@/api/song";
 import { keywords as defaultKeywords, regexes as defaultRegexes } from "@/assets/data/exclude";
 import { useCacheManager } from "@/core/resource/CacheManager";
@@ -757,6 +758,14 @@ class LyricManager {
       return { data: result, meta: defaultMeta };
     }
     try {
+      if (song.serverType === "gdstudio") {
+        const lyrics = await getGdLyrics(song);
+        const original = parseLrc(lyrics.lyric) || [];
+        result.lrcData = lyrics.translatedLyric
+          ? alignLyrics(original, parseLrc(lyrics.translatedLyric), "translatedLyric")
+          : original;
+        return { data: result, meta: defaultMeta };
+      }
       const streamingStore = useStreamingStore();
       const lyricContent = await streamingStore.fetchLyrics(song);
       if (lyricContent) {

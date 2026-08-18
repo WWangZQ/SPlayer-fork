@@ -1,46 +1,42 @@
 <template>
   <div class="home">
-    <div v-if="settingStore.showHomeGreeting" class="welcome">
-      <n-h1>{{ greetings }}</n-h1>
-      <n-text depth="3">由此开启好心情 ~</n-text>
-    </div>
-    <!-- 在线模式 -->
-    <HomeOnline v-if="settingStore.useOnlineService" />
-    <!-- 本地模式 -->
-    <HomeLocal v-else />
+    <n-card class="hero" :bordered="false">
+      <n-flex vertical :size="18">
+        <n-text depth="3">2MORO MUSIC</n-text>
+        <n-h1>想听什么？</n-h1>
+        <n-text depth="3">从右上角搜索歌曲，双击即可加入播放队列。</n-text>
+        <n-flex align="center" :size="8">
+          <n-tag round type="primary">网易云</n-tag>
+          <n-tag round>Joox</n-tag>
+          <n-tag round>Bilibili</n-tag>
+        </n-flex>
+        <n-text depth="3" class="attribution">音乐数据由 GD音乐台 提供</n-text>
+      </n-flex>
+    </n-card>
   </div>
 </template>
 
-<script setup lang="ts">
-import { useSettingStore, useDataStore } from "@/stores";
-import { getGreeting } from "@/utils/time";
-import { isLogin } from "@/utils/auth";
-import HomeOnline from "./HomeOnline.vue";
-import HomeLocal from "./HomeLocal.vue";
-
-const settingStore = useSettingStore();
-const dataStore = useDataStore();
-
-// 问候语
-const greetings = computed(() => {
-  const greeting = getGreeting();
-  const name = isLogin() ? dataStore.userData.name : "";
-  return name ? `${greeting}，${name}` : greeting;
-});
-</script>
-
 <style lang="scss" scoped>
 .home {
+  display: grid;
+  place-items: center;
   width: 100%;
-  max-width: 1500px;
-  margin: 0 auto;
-  .welcome {
-    margin-top: 8px;
-    margin-bottom: 20px;
-    .n-h1 {
-      margin: 0;
-      font-weight: bold;
-    }
+  min-height: 100%;
+}
+
+.hero {
+  width: min(680px, 100%);
+  padding: 28px;
+
+  .n-h1 {
+    margin: 0;
+    font-size: clamp(42px, 8vw, 72px);
+    line-height: 1.05;
+  }
+
+  .attribution {
+    margin-top: 12px;
+    font-size: 12px;
   }
 }
 </style>
