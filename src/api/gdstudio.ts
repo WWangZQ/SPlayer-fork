@@ -7,6 +7,7 @@ type GdTrack = {
   album: string;
   source: string;
   lyricId: string;
+  picId: string;
 };
 
 type GdSearchResponse = {
@@ -34,7 +35,9 @@ const convertTrack = (track: GdTrack): SongType => ({
   name: track.name,
   artists: track.artists.join(" / ") || "未知艺术家",
   album: track.album || "未知专辑",
-  cover: "/images/album.jpg?asset",
+  cover: track.picId
+    ? `/api/v1/gd/covers/${encodeURIComponent(track.source)}/${encodeURIComponent(track.picId)}?size=500`
+    : "/images/album.jpg?asset",
   duration: 0,
   free: 0,
   mv: null,

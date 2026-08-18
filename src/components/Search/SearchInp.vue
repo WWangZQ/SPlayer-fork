@@ -23,6 +23,10 @@
     <Transition name="fade" mode="out-in">
       <div v-show="statusStore.searchFocus" class="search-mask" @click.stop="closeSearchFocus" />
     </Transition>
+    <!-- 默认内容 -->
+    <SearchDefault v-if="settingStore.useOnlineService" @to-search="toSearch" />
+    <!-- 搜索结果 -->
+    <SearchSuggest @to-search="toSearch" />
     <!-- 右键菜单 -->
     <SearchInpMenu ref="searchInpMenuRef" @to-search="toSearch" />
   </div>
@@ -30,6 +34,10 @@
 
 <script setup lang="ts">
 import { useStatusStore, useDataStore, useSettingStore } from "@/stores";
+import { searchDefault } from "@/api/search";
+import { usePlayerController } from "@/core/player/PlayerController";
+import { songDetail } from "@/api/song";
+import { formatSongsList } from "@/utils/format";
 import SearchInpMenu from "@/components/Menu/SearchInpMenu.vue";
 
 const router = useRouter();
@@ -37,15 +45,17 @@ const route = useRoute();
 const dataStore = useDataStore();
 const statusStore = useStatusStore();
 const settingStore = useSettingStore();
+const player = usePlayerController();
 
 // 右键菜单
 const searchInpMenuRef = ref<InstanceType<typeof SearchInpMenu> | null>(null);
 
 // 搜索框数据
 const searchInputRef = ref<HTMLInputElement | null>(null);
-const searchPlaceholder = computed(() =>
-  settingStore.useOnlineService ? "搜索全网音乐" : "搜索本地音乐",
+const searchPlaceholder = ref<string>(
+  settingStore.useOnlineService ? "搜索音乐 / 视频" : "搜索本地音乐",
 );
+const searchRealkeyword = ref<string>("");
 
 // 搜索框输入限制
 const noSideSpace = (value: string) => !value.startsWith(" ");
@@ -98,8 +108,24 @@ const setSearchHistory = (keyword: string) => {
   }
 };
 
+// 更换搜索框关键词
+const updatePlaceholder = async () => {
+  if (!settingStore.enableSearchKeyword) {
+    searchPlaceholder.value = "搜索音乐 / 视频";
+    return;
+  }
+  try {
+    const result = await searchDefault();
+    searchPlaceholder.value = result.data.showKeyword;
+    searchRealkeyword.value = result.data.realkeyword;
+  } catch (error) {
+    console.error("搜索关键词获取失败：", error);
+    searchPlaceholder.value = "搜索音乐 / 视频";
+  }
+};
+
 // 前往搜索
-const toSearch = (key: string) => {
+const toSearch = async (key: any, type: string = "keyword") => {
   // 关闭搜索框
   statusStore.searchFocus = false;
   searchInputRef.value?.blur();
@@ -108,7 +134,10 @@ const toSearch = (key: string) => {
     statusStore.searchInputValue = "";
   }
   // 未输入内容且不存在推荐
-  if (!key?.trim()) return;
+  if (!key && searchPlaceholder.value === "搜索音乐 / 视频") return;
+  if (!key && searchPlaceholder.value !== "搜索音乐 / 视频" && searchRealkeyword.value) {
+    key = searchRealkeyword.value?.trim();
+  }
   // 本地搜索
   if (!settingStore.useOnlineService) {
     // 跳转本地搜索页面
@@ -118,9 +147,41 @@ const toSearch = (key: string) => {
     });
     return;
   }
-  router.push({ name: "search", query: { keyword: key.trim() } });
-  setSearchHistory(key);
+  // 更新推荐
+  updatePlaceholder();
+  // 前往搜索
+  switch (type) {
+    case "keyword":
+      router.push({ name: "search", query: { keyword: key } });
+      setSearchHistory(key);
+      break;
+    case "songs": {
+      const result = await songDetail(key?.id);
+      const song = formatSongsList(result.songs)[0];
+      player.addNextSong(song, true);
+      break;
+    }
+    case "playlists":
+      router.push({ name: "playlist", query: { id: key?.id } });
+      break;
+    case "artists":
+      router.push({ name: "artist", query: { id: key?.id } });
+      break;
+    case "albums":
+      router.push({ name: "album", query: { id: key?.id } });
+      break;
+    case "share":
+      if (key?.realType && key?.id) toSearch({ id: key.id }, key.realType);
+      break;
+    default:
+      break;
+  }
 };
+
+// 监听设置变化
+watch([() => settingStore.enableSearchKeyword, () => settingStore.useOnlineService], () => {
+  updatePlaceholder();
+});
 
 // 监听路由变化，同步搜索词
 watch(
@@ -130,6 +191,13 @@ watch(
   },
   { immediate: true },
 );
+
+onMounted(() => {
+  if (settingStore.useOnlineService) {
+    updatePlaceholder();
+    useIntervalFn(updatePlaceholder, 60 * 1000, { immediate: true });
+  }
+});
 </script>
 
 <style lang="scss" scoped>
