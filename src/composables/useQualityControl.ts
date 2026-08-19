@@ -1,4 +1,5 @@
 import { songQuality } from "@/api/song";
+import { gdQualityLevels, getGdStreamUrl } from "@/api/gdstudio";
 import { usePlayerController } from "@/core/player/PlayerController";
 import { useMusicStore, useSettingStore, useStatusStore } from "@/stores";
 import { QualityType } from "@/types/main";
@@ -25,6 +26,8 @@ export const useQualityControl = () => {
   const settingStore = useSettingStore();
 
   const player = usePlayerController();
+
+  const isGdSong = computed(() => musicStore.playSong.serverType === "gdstudio");
 
   // 获取音质名称
   const getQualityName = (quality: QualityType | undefined) => {
@@ -93,10 +96,14 @@ export const useQualityControl = () => {
    */
   const loadQualities = async (isPreload = false) => {
     // 本地歌曲或解锁歌曲不支持切换
-    if (musicStore.playSong.path || statusStore.isUnlocked || musicStore.playSong.type !== "song")
-      return;
+    if (musicStore.playSong.path || statusStore.isUnlocked) return;
     // 如果已经加载过，不重复加载
     if (statusStore.availableQualities.length > 0) return;
+    if (isGdSong.value) {
+      statusStore.availableQualities = gdQualityLevels.map((quality) => ({ ...quality }));
+      return;
+    }
+    if (musicStore.playSong.type !== "song") return;
     const songId = musicStore.playSong.id;
     if (!songId) return;
     try {
@@ -130,12 +137,26 @@ export const useQualityControl = () => {
   // 选择音质
   const handleQualitySelect = async (key: string) => {
     // 如果选择的和当前一样，不处理
-    if (settingStore.songLevel === key) {
+    if (currentPlayingLevel.value === key) {
       return;
     }
     const item = availableQualities.value.find((q) => q.level === key);
     if (!item) return;
-    // 更新音质
+    if (isGdSong.value) {
+      const song = musicStore.playSong;
+      const bitrate = item.br;
+      if (!song.serverId || !song.originalId || !bitrate) return;
+      const qualityMap: Record<string, QualityType> = {
+        standard: QualityType.LQ,
+        higher: QualityType.MQ,
+        exhigh: QualityType.HQ,
+        lossless: QualityType.SQ,
+        hires: QualityType.HiRes,
+      };
+      song.streamUrl = getGdStreamUrl(song.serverId, song.originalId, bitrate);
+      song.quality = qualityMap[item.level];
+    }
+    // 更新默认音质
     settingStore.songLevel = key as typeof settingStore.songLevel;
     // 切换音质，保持当前进度，不重新加载歌词
     await player.switchQuality(statusStore.currentTime);
@@ -156,7 +177,12 @@ export const useQualityControl = () => {
     getQualityName,
     isOnlineSong: computed(() => {
       const song = musicStore.playSong;
-      return !song.path && !song.pc && song.type === "song" && !statusStore.isUnlocked;
+      return (
+        !song.path &&
+        !song.pc &&
+        (song.type === "song" || song.serverType === "gdstudio") &&
+        !statusStore.isUnlocked
+      );
     }),
   };
 };

@@ -7,7 +7,7 @@
           :key="index"
           :class="['cover-item', { 'no-cover': hiddenCover }]"
           @click="goDetail(item)"
-          @contextmenu="coverMenuRef?.openDropdown($event, item, type)"
+          @contextmenu="openCoverMenu($event, item)"
         >
           <!-- 封面 -->
           <div v-if="!hiddenCover" class="cover">
@@ -148,6 +148,8 @@ const props = defineProps<{
   /** 是否为流媒体数据 */
   isStreaming?: boolean;
   hiddenCover?: boolean;
+  /** 推荐卡片对应的歌曲 */
+  recommendationSongs?: SongType[];
 }>();
 
 const emit = defineEmits<{
@@ -162,6 +164,9 @@ const localStore = useLocalStore();
 const settingStore = useSettingStore();
 const player = usePlayerController();
 
+const getRecommendationSong = (item: CoverType) =>
+  props.recommendationSongs?.find((song) => song.id === item.id);
+
 // 右键菜单
 const coverMenuRef = ref<InstanceType<typeof CoverMenu> | null>(null);
 
@@ -171,6 +176,11 @@ const isPlaying = (id: number | string) =>
 
 // 查看详情
 const goDetail = (item: CoverType) => {
+  const song = getRecommendationSong(item);
+  if (song && props.recommendationSongs) {
+    player.updatePlayList(props.recommendationSongs, song, Number(song.id));
+    return;
+  }
   // 流媒体歌单跳转到专门的路由
   if (props.isStreaming && props.type === "playlist") {
     router.push({
@@ -185,10 +195,24 @@ const goDetail = (item: CoverType) => {
   });
 };
 
+const openCoverMenu = (event: MouseEvent, item: CoverType) => {
+  if (props.recommendationSongs) return;
+  coverMenuRef.value?.openDropdown(event, item, props.type);
+};
+
 // 播放歌单
 const playList = debounce(
   async (item: CoverType) => {
     try {
+      const recommendationSong = getRecommendationSong(item);
+      if (recommendationSong && props.recommendationSongs) {
+        if (musicStore.playPlaylistId === item.id) return player.playOrPause();
+        return player.updatePlayList(
+          props.recommendationSongs,
+          recommendationSong,
+          Number(recommendationSong.id),
+        );
+      }
       // 视频直接跳转
       if (props.type === "video") {
         return router.push({ name: "video", query: { id: item.id } });

@@ -43,17 +43,13 @@
         </n-h3>
       </n-flex>
       <!-- 列表 -->
-      <ArtistList
-        v-if="item.type === 'artist'"
-        :data="item.list"
-        :loading="true"
-        :hiddenCover="settingStore.hiddenCovers.home"
-      />
       <CoverList
-        v-else
         :data="item.list"
-        :type="item.type"
-        :loading="true"
+        type="playlist"
+        :recommendationSongs="item.songs"
+        :loading="loading"
+        :loadingNum="6"
+        emptyDescription="该栏目暂时没有可用推荐"
         :hiddenCover="settingStore.hiddenCovers.home"
       />
     </div>
@@ -61,15 +57,10 @@
 </template>
 
 <script setup lang="ts">
-import type { ArtistType, CoverType } from "@/types/main";
+import type { CoverType, SongType } from "@/types/main";
 import { NText } from "naive-ui";
 import { useDataStore, useMusicStore, useSettingStore } from "@/stores";
-import { newAlbumsAll, personalized, radarPlaylist, topArtists } from "@/api/rec";
-import { allMv } from "@/api/video";
-import { radioRecommend } from "@/api/radio";
-import { getCacheData } from "@/utils/cache";
-import { formatArtistsList, formatCoverList } from "@/utils/format";
-import { sleep } from "@/utils/helper";
+import { loadGdHomeSections, type GdHomeSectionKey } from "@/api/gdstudio-home";
 import { isLogin } from "@/utils/auth";
 import SvgIcon from "@/components/Global/SvgIcon.vue";
 
@@ -78,29 +69,19 @@ interface RecItemTypeBase {
   path?: string;
 }
 
-interface RecItemArtist extends RecItemTypeBase {
-  type: "artist";
-  list: ArtistType[];
-}
-
 interface RecItemCover extends RecItemTypeBase {
-  type: "playlist" | "video" | "radio" | "album";
+  type: "playlist";
   list: CoverType[];
+  songs: SongType[];
 }
 
-interface RecDataType {
-  playlist: RecItemCover;
-  radar: RecItemCover;
-  artist: RecItemArtist;
-  video: RecItemCover;
-  radio: RecItemCover;
-  album: RecItemCover;
-}
+type RecDataType = Partial<Record<GdHomeSectionKey, RecItemCover>>;
 
 const router = useRouter();
 const dataStore = useDataStore();
 const musicStore = useMusicStore();
 const settingStore = useSettingStore();
+const loading = ref(false);
 
 // 日推标题
 const dailySongsTitle = computed(() => {
@@ -116,40 +97,18 @@ const dailySongsTitle = computed(() => {
 });
 
 // 推荐数据
+const createEmptySection = (name: string): RecItemCover => ({
+  name,
+  type: "playlist",
+  list: [],
+  songs: [],
+});
+
 const recData = ref<RecDataType>({
-  playlist: {
-    name: isLogin() ? "专属歌单" : "推荐歌单",
-    list: [] as CoverType[],
-    type: "playlist",
-    path: "/discover/playlists",
-  },
-  radar: {
-    name: "雷达歌单",
-    list: [] as CoverType[],
-    type: "playlist",
-  },
-  artist: {
-    name: "歌手推荐",
-    list: [] as ArtistType[],
-    type: "artist",
-    path: "/discover/artists",
-  },
-  video: {
-    name: "推荐 MV",
-    list: [] as CoverType[],
-    type: "video",
-  },
-  radio: {
-    name: "推荐播客",
-    list: [] as CoverType[],
-    type: "radio",
-  },
-  album: {
-    name: "新碟上架",
-    list: [] as CoverType[],
-    type: "album",
-    path: "/discover/new",
-  },
+  playlist: createEmptySection("推荐歌曲"),
+  radar: createEmptySection("场景雷达"),
+  artist: createEmptySection("歌手推荐"),
+  album: createEmptySection("新碟精选"),
 });
 
 // 根据设置过滤和排序推荐数据
@@ -158,76 +117,35 @@ const sortedRecData = computed(() => {
     .filter((section) => section.visible)
     .sort((a, b) => a.order - b.order)
     .map((section) => {
-      const key = section.key as keyof RecDataType;
+      const key = section.key as GdHomeSectionKey;
       return recData.value[key];
     })
-    .filter((item) => item);
+    .filter((item): item is RecItemCover => Boolean(item));
   return sections;
 });
 
 // 获取全部推荐
 const getAllRecData = async () => {
+  if (loading.value) return;
+  loading.value = true;
   try {
-    // 延时
-    await sleep(300);
-
-    // 歌单
-    try {
-      const playlistRes = await getCacheData(
-        personalized,
-        { key: "playlistRec", time: 10 },
-        "playlist",
-        isLogin() ? 21 : 20,
-      );
-      recData.value.playlist.list = formatCoverList(
-        playlistRes.result?.filter((pl: any) => !pl.name.includes("私人雷达")),
-      );
-    } catch (error) {
-      console.error("Error getting playlist:", error);
-    }
-
-    // 雷达
-    try {
-      const radarRes = await getCacheData(radarPlaylist, { key: "radarRec", time: 30 });
-      recData.value.radar.list = formatCoverList(radarRes);
-    } catch (error) {
-      console.error("Error getting radar:", error);
-    }
-
-    // 歌手
-    try {
-      const artistRes = await getCacheData(topArtists, { key: "artistRec", time: 10 }, 6);
-      recData.value.artist.list = formatArtistsList(artistRes.artists);
-    } catch (error) {
-      console.error("Error getting artist:", error);
-    }
-
-    // MV
-    try {
-      const videoRes = await getCacheData(allMv, { key: "videoRec", time: 10 });
-      recData.value.video.list = formatCoverList(videoRes.data);
-    } catch (error) {
-      console.error("Error getting video:", error);
-    }
-
-    // 播客
-    try {
-      const radioRes = await getCacheData(radioRecommend, { key: "radioRec", time: 10 });
-      recData.value.radio.list = formatCoverList(radioRes.djRadios);
-    } catch (error) {
-      console.error("Error getting radio:", error);
-    }
-
-    // 新碟
-    try {
-      const albumRes = await getCacheData(newAlbumsAll, { key: "albumRec", time: 10 });
-      recData.value.album.list = formatCoverList(albumRes.albums);
-    } catch (error) {
-      console.error("Error getting album:", error);
-    }
+    const sections = await loadGdHomeSections();
+    recData.value = Object.fromEntries(
+      sections.map((section) => [
+        section.key,
+        {
+          name: section.name,
+          type: "playlist",
+          list: section.list,
+          songs: section.songs,
+        },
+      ]),
+    );
   } catch (error) {
-    window.$message.error("个性化推荐获取出错");
-    console.error("Error getting personalized data:", error);
+    window.$message.error("首页推荐获取出错");
+    console.error("首页推荐获取出错:", error);
+  } finally {
+    loading.value = false;
   }
 };
 

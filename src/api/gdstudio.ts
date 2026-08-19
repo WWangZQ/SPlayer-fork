@@ -1,4 +1,4 @@
-import type { SongType } from "@/types/main";
+import { QualityType, type SongType } from "@/types/main";
 
 type GdTrack = {
   id: string;
@@ -21,6 +21,17 @@ type GdLyricResponse = {
   translatedLyric: string;
 };
 
+export const gdQualityLevels = [
+  { name: "标准音质", level: "standard", value: "l", br: 128 },
+  { name: "较高音质", level: "higher", value: "m", br: 192 },
+  { name: "极高音质", level: "exhigh", value: "h", br: 320 },
+  { name: "无损音质", level: "lossless", value: "sq", br: 740 },
+  { name: "Hi-Res", level: "hires", value: "hr", br: 999 },
+] as const;
+
+export const getGdStreamUrl = (source: string, id: string, bitrate = 320) =>
+  `/api/v1/gd/tracks/${encodeURIComponent(source)}/${encodeURIComponent(id)}/stream?br=${bitrate}`;
+
 const stableNumericId = (value: string): number => {
   let hash = 2166136261;
   for (let index = 0; index < value.length; index++) {
@@ -42,7 +53,8 @@ const convertTrack = (track: GdTrack): SongType => ({
   free: 0,
   mv: null,
   type: "streaming",
-  streamUrl: `/api/v1/gd/tracks/${encodeURIComponent(track.source)}/${encodeURIComponent(track.id)}/stream?br=320`,
+  quality: QualityType.HQ,
+  streamUrl: getGdStreamUrl(track.source, track.id),
   originalId: track.id,
   lyricId: track.lyricId,
   serverType: "gdstudio",

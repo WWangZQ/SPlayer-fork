@@ -420,7 +420,7 @@ class SongManager {
           id: nextSong.id,
           url: nextSong.streamUrl,
           isUnlocked: false,
-          quality: QualityType.SQ,
+          quality: nextSong.quality || QualityType.SQ,
         };
         return this.nextPrefetch;
       }
